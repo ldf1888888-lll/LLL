@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跟单小助手   by: 金鱼</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // 配置Tailwind自定义颜色和样式
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4ade80',
+                        secondary: '#60a5fa',
+                        neutral: '#f3f4f6',
+                        护眼绿: '#e6f4ea',
+                        护眼深绿: '#4d7c0f',
+                    },
+                    fontFamily: {
+                        sans: ['SimSun', 'Arial', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+            .bg-transparent-80 {
+                background-color: rgba(255, 255, 255, 0.8);
+            }
+            .bg-green-transparent-80 {
+                background-color: rgba(230, 244, 234, 0.8);
+            }
+            .click-effect {
+                transition: all 0.15s ease;
+            }
+            .click-effect:active {
+                transform: scale(0.95);
+            }
+            .float-animation {
+                animation: float 4s ease-in-out infinite;
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px) rotate(0deg); }
+                25% { transform: translateY(-10px) rotate(1deg); }
+                50% { transform: translateY(0px) rotate(0deg); }
+                75% { transform: translateY(10px) rotate(-1deg); }
+            }
+            .bounce-random {
+                animation: bounceRandom 3s ease-in-out infinite;
+            }
+            @keyframes bounceRandom {
+                0%, 100% { transform: translate(0, 0) rotate(0deg); }
+                25% { transform: translate(var(--x1), var(--y1)) rotate(var(--r1)); }
+                50% { transform: translate(var(--x2), var(--y2)) rotate(var(--r2)); }
+                75% { transform: translate(var(--x3), var(--y3)) rotate(var(--r3)); }
+            }
+            .pulse-animation {
+                animation: pulse 2s ease-in-out infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 0.3; transform: scale(1); }
+                50% { opacity: 0.5; transform: scale(1.05); }
+            }
+            .editing-breathing-bg {
+                animation: breathing 2s ease-in-out infinite;
+            }
+            @keyframes breathing {
+                0%, 100% { border-color: #60a5fa; }
+                50% { border-color: #3b82f6; }
+            }
+            .copy-toast {
+                animation: fadeInOut 2s ease-in-out;
+            }
+            @keyframes fadeInOut {
+                0%, 100% { opacity: 0; transform: translateY(-10px); }
+                20%, 80% { opacity: 1; transform: translateY(0); }
+            }
+            .highlighted-item {
+                border-color: #60a5fa !important;
+                box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+                transform: scale(1.01);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+            .push-effect {
+                transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .push-effect:active {
+                transform: translateY(2px);
+            }
+            .edit-mode {
+                background-color: rgba(96, 165, 250, 0.1);
+                border-left: 3px solid #60a5fa;
+            }
+            .delete-animation {
+                animation: deleteItem 0.4s ease-out forwards;
+            }
+            @keyframes deleteItem {
+                0% { transform: translateX(0); opacity: 1; }
+                30% { transform: translateX(-10px); opacity: 0.7; }
+                100% { transform: translateX(-30px); opacity: 0; height: 0; margin: 0; padding: 0; overflow: hidden; }
+            }
+            .delete-btn-active {
+                background-color: rgba(239, 68, 68, 0.1);
+            }
+            .ripple {
+                position: relative;
+                overflow: hidden;
+            }
+            .ripple:after {
+                content: "";
+                background: rgba(255, 255, 255, 0.3);
+                position: absolute;
+                border-radius: 50%;
+                transform: scale(0);
+                animation: ripple 0.5s linear;
+            }
+            @keyframes ripple {
+                to {
+                    transform: scale(2.5);
+                    opacity: 0;
+                }
+            }
+            .search-highlight {
+                background-color: rgba(255, 221, 0, 0.3);
+                font-weight: bold;
+                padding: 0 2px;
+                border-radius: 2px;
+            }
+            .search-results-container {
+                max-height: 200px;
+                overflow-y: auto;
+                z-index: 10;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            }
+            /* 业务类型按钮样式 */
+            .service-type-btn {
+                @apply px-3 py-1.5 text-sm rounded-md transition-all duration-200;
+            }
+            .service-type-btn:hover {
+                @apply transform -translate-y-0.5 shadow-md;
+            }
+            .service-type-btn:active {
+                @apply transform translate-y-0;
+            }
+            .service-type-btn.selected {
+                @apply ring-2 ring-offset-2 ring-primary font-medium;
+            }
+            /* 背景文字优化 */
+            .background-text {
+                user-select: none;
+                -webkit-user-select: none;
+                text-rendering: optimizeLegibility;
+                filter: blur(0.5px);
+            }
+            .text-glow {
+                text-shadow: 0 0 15px rgba(74, 222, 128, 0.5), 
+                             0 0 30px rgba(74, 222, 128, 0.3);
+            }
+            /* 鼠标跟随的爆单元素 */
+            .floating-badge {
+                position: absolute;
+                pointer-events: none;
+                z-index: 40;
+                animation: floatAway 1.5s ease-out forwards;
+                opacity: 0;
+            }
+            @keyframes floatAway {
+                0% { transform: translate(0, 0) scale(0.8); opacity: 0.8; }
+                100% { transform: translate(0, -50px) scale(0.4); opacity: 0; }
+            }
+            /* 编辑模式专用样式 */
+            .edit-section {
+                border: 1px dashed #60a5fa;
+                background-color: rgba(96, 165, 250, 0.05);
+            }
+            .edit-mode-indicator {
+                background-color: #60a5fa;
+                color: white;
+                font-weight: bold;
+                animation: pulse 1.5s infinite;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen transition-colors duration-500 bg-护眼绿" id="app-body">
+    <!-- 背景文字 - 爆单和发财 -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 text-[clamp(6rem,20vw,15rem)] font-black text-gray-400 pulse-animation bounce-random background-text text-glow" id="explode-orders" style="z-index: -1; opacity: 0.4; filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));">爆单</div>
+        <div class="absolute bottom-1/4 right-1/4 text-[clamp(6rem,20vw,15rem)] font-black text-gray-400 pulse-animation bounce-random background-text text-glow" id="get-rich" style="z-index: -1; opacity: 0.4; filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));">发财</div>
+    </div>
+
+    <div class="container mx-auto px-4 py-4 relative z-10">
+        <!-- 顶部工具栏 -->
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">跟单小助手   by: 金鱼</h1>
+            <button id="skin-toggle" class="bg-primary hover:bg-primary/80 text-white py-1.5 px-3 rounded-lg shadow click-effect flex items-center transition-all duration-300 ripple push-effect">
+                <i class="fa fa-paint-brush mr-2"></i>
+                <span id="skin-text">默认皮肤</span>
+            </button>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex flex-col lg:flex-row gap-4">
+            <!-- 左侧：待处理列表 -->
+            <div class="lg:w-1/4 bg-green-transparent-80 rounded-xl shadow p-4 transition-all duration-500 card-hover flex flex-col" id="left-panel">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fa fa-tasks mr-2 text-secondary"></i>
+                        待处理列表
+                    </h2>
+                    <div class="flex items-center gap-1">
+                        <button id="delete-processed-btn" class="text-red-600 hover:bg-red-100 p-1 px-2 rounded text-xs click-effect transition-colors hidden ripple push-effect" title="删除所有已处理项目">
+                            删除已处理
+                        </button>
+                        <button id="clear-all-btn" class="text-red-600 hover:bg-red-100 p-1 px-2 rounded text-xs click-effect transition-colors hidden ripple push-effect" title="清空所有项目">
+                            删除全部
+                        </button>
+                        <span id="pending-count" class="bg-secondary text-white text-sm py-0.5 px-2 rounded-full shadow-sm">0</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 flex-grow overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent" id="pending-list">
+                    <div class="text-gray-500 text-center py-6">
+                        <i class="fa fa-inbox text-2xl mb-2 text-gray-400"></i>
+                        <p>暂无待处理项目</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：主要操作区 -->
+            <div class="lg:w-3/4 space-y-4">
+                <!-- 粘贴和提取结果 -->
+                <div class="bg-green-transparent-80 rounded-xl shadow p-4 transition-all duration-500 card-hover" id="paste-panel">
+                    <div class="mb-3">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i class="fa fa-paste mr-2 text-secondary"></i>
+                            信息处理
+                        </h3>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <textarea id="paste-area" rows="2" placeholder="粘贴包含主叫号码、业务号码和呼叫流水号的内容，将自动提取..." 
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all click-effect text-sm"></textarea>
+                        <p class="text-xs text-gray-500 mt-1"><i class="fa fa-info-circle mr-1"></i> 粘贴后将自动提取信息</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 gap-2 md:grid-cols-3">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-0.5">主叫号码</label>
+                            <div class="flex">
+                                <input type="text" id="caller-number" class="flex-1 p-2 text-sm border border-gray-300 rounded-l-lg focus:ring-1 focus:ring-secondary focus:border-secondary" readonly>
+                                <button class="copy-btn bg-secondary hover:bg-secondary/80 text-white p-2 border border-l-0 border-secondary rounded-r-lg click-effect transition-colors ripple push-effect" data-target="caller-number" title="复制主叫号码">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-0.5">业务号码</label>
+                            <div class="flex">
+                                <input type="text" id="service-number" class="flex-1 p-2 text-sm border border-gray-300 rounded-l-lg focus:ring-1 focus:ring-secondary focus:border-secondary" readonly>
+                                <button class="copy-btn bg-secondary hover:bg-secondary/80 text-white p-2 border border-l-0 border-secondary rounded-r-lg click-effect transition-colors ripple push-effect" data-target="service-number" title="复制业务号码">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-0.5">呼叫流水号</label>
+                            <div class="flex">
+                                <input type="text" id="call-id" class="flex-1 p-2 text-sm border border-gray-300 rounded-l-lg focus:ring-1 focus:ring-secondary focus:border-secondary min-w-[0]" readonly style="font-family: monospace;">
+                                <button class="copy-btn bg-secondary hover:bg-secondary/80 text-white p-2 border border-l-0 border-secondary rounded-r-lg click-effect transition-colors ripple push-effect" data-target="call-id" title="复制呼叫流水号">
+                                    <i class="fa fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 办理内容和按钮区 -->
+                <div class="rounded-xl shadow p-4 transition-all duration-500 card-hover bg-green-transparent-80" id="content-panel">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800 flex items-center">
+                        <i class="fa fa-file-text-o mr-2 text-secondary"></i>
+                        办理内容
+                    </h3>
+                    
+                    <!-- 业务类型快速选择按钮组 -->
+                    <div class="mb-3 flex flex-wrap gap-2">
+                        <button class="service-type-btn bg-blue-100 text-blue-800 hover:bg-blue-200" data-service="新装宽带">新装宽带</button>
+                        <button class="service-type-btn bg-purple-100 text-purple-800 hover:bg-purple-200" data-service="改套餐">改套餐</button>
+                        <button class="service-type-btn bg-green-100 text-green-800 hover:bg-green-200" data-service="增值业务">增值业务</button>
+                        <button class="service-type-btn bg-yellow-100 text-yellow-800 hover:bg-yellow-200" data-service="10000单">10000单</button>
+                    </div>
+                    
+                    <textarea id="processing-content" rows="4" placeholder="请输入办理内容..." 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-transparent transition-all click-effect"></textarea>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <button id="save-btn" class="text-white py-2 px-4 rounded-lg shadow click-effect transition-all duration-300 flex items-center ripple push-effect bg-green-500 hover:bg-green-600">
+                            <i class="fa fa-save mr-1"></i> 保存
+                        </button>
+                        <button id="clear-btn" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg shadow click-effect transition-all duration-300 flex items-center ripple push-effect">
+                            <i class="fa fa-trash mr-1"></i> 清空
+                        </button>
+                        <button id="secondary-confirm-btn" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg shadow click-effect transition-all duration-300 flex items-center ml-auto ripple push-effect">
+                            <i class="fa fa-list-alt mr-1"></i> 二次确定
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 二次确定弹窗 -->
+    <div id="secondary-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-green-transparent-80 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden transition-all duration-500 transform scale-95 opacity-0" id="modal-content">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-800">二次确定 - 自定义内容</h3>
+                <div>
+                    <!-- 编辑模式下显示的按钮 -->
+                    <div id="edit-mode-controls" class="hidden">
+                        <span class="inline-block px-2 py-1 mr-2 text-xs edit-mode-indicator rounded">
+                            编辑模式
+                        </span>
+                        <button id="cancel-edit-btn" class="text-gray-600 hover:text-gray-800 px-2 py-1 mr-2 click-effect transition-colors ripple push-effect">
+                            <i class="fa fa-times mr-1"></i> 取消
+                        </button>
+                        <button id="save-edit-btn" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded click-effect transition-colors ripple push-effect">
+                            <i class="fa fa-check mr-1"></i> 保存
+                        </button>
+                    </div>
+                    <!-- 正常模式下显示的按钮 -->
+                    <div id="normal-mode-controls">
+                        <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-xl click-effect transition-colors ripple push-effect">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-b p-2 bg-gray-50">
+                <div class="flex flex-wrap gap-1">
+                    <button class="category-btn active px-3 py-1 rounded-full text-xs bg-secondary text-white click-effect transition-all ripple push-effect" data-category="all">全部</button>
+                    <button class="category-btn px-3 py-1 rounded-full text-xs bg-gray-200 hover:bg-gray-300 click-effect transition-all ripple push-effect" data-category="增值业务">增值业务</button>
+                    <button class="category-btn px-3 py-1 rounded-full text-xs bg-gray-200 hover:bg-gray-300 click-effect transition-all ripple push-effect" data-category="移机">移机</button>
+                    <button class="category-btn px-3 py-1 rounded-full text-xs bg-gray-200 hover:bg-gray-300 click-effect transition-all ripple push-effect" data-category="单手机套餐">单手机套餐</button>
+                    <button class="category-btn px-3 py-1 rounded-full text-xs bg-gray-200 hover:bg-gray-300 click-effect transition-all ripple push-effect" data-category="融合套餐">融合套餐</button>
+                    <button class="category-btn px-3 py-1 rounded-full text-xs bg-gray-200 hover:bg-gray-300 click-effect transition-all ripple push-effect" data-category="商企套餐">商企套餐</button>
+                </div>
+            </div>
+            
+            <!-- 正常模式添加区域 -->
+            <div id="add-item-section" class="p-3 border-b relative">
+                <div class="flex gap-2 flex-wrap">
+                    <select id="new-item-category" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent flex-1 click-effect">
+                        <option value="增值业务">增值业务</option>
+                        <option value="移机">移机</option>
+                        <option value="单手机套餐">单手机套餐</option>
+                        <option value="融合套餐">融合套餐</option>
+                        <option value="商企套餐">商企套餐</option>
+                    </select>
+                    <input type="text" id="new-item-content" placeholder="输入内容搜索或添加..." class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent flex-3 click-effect" autocomplete="off">
+                    <button id="add-item-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg click-effect transition-all duration-300 ripple push-effect">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+                
+                <div id="search-results" class="search-results-container absolute left-3 right-3 top-full mt-1 bg-white rounded-lg border border-gray-200 hidden"></div>
+            </div>
+            
+            <!-- 编辑模式专用区域 -->
+            <div id="edit-item-section" class="p-3 border-b relative hidden edit-section">
+                <div class="flex gap-2 flex-wrap">
+                    <select id="edit-item-category" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent flex-1 click-effect">
+                        <option value="增值业务">增值业务</option>
+                        <option value="移机">移机</option>
+                        <option value="单手机套餐">单手机套餐</option>
+                        <option value="融合套餐">融合套餐</option>
+                        <option value="商企套餐">商企套餐</option>
+                    </select>
+                    <input type="text" id="edit-item-content" placeholder="编辑内容..." class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent flex-3 click-effect editing-breathing-bg" autocomplete="off">
+                </div>
+            </div>
+            
+            <div class="p-3 overflow-y-auto max-h-[40vh] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent" id="custom-content-list">
+                <div class="text-gray-500 text-center py-6">
+                    <p>暂无内容，请添加自定义内容</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复制提示 -->
+    <div id="copy-toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 pointer-events-none z-50">
+        已复制到剪贴板
+    </div>
+
+    <!-- 操作提示 -->
+    <div id="action-toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 pointer-events-none z-50">
+        操作成功
+    </div>
+
+    <!-- 删除确认对话框 -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all duration-300 scale-95 opacity-0" id="delete-confirm-content">
+            <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
+                    <i class="fa fa-exclamation-triangle text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800" id="delete-confirm-title">确认删除</h3>
+                <p class="text-gray-600 mt-2" id="delete-confirm-message">您确定要删除这个项目吗？</p>
+            </div>
+            <div class="flex gap-3">
+                <button id="delete-cancel-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg click-effect transition-all duration-300 ripple push-effect">
+                    取消
+                </button>
+                <button id="delete-confirm-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg click-effect transition-all duration-300 ripple push-effect">
+                    确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let pendingItems = [];
+        let customItems = [];
+        let currentSkin = 'green'; // 默认护眼皮肤
+        let currentEditingItemId = null; // 当前正在编辑的项目ID
+        let currentEditingCustomItemId = null; // 当前正在编辑的自定义内容ID
+        let itemToDelete = null; // 待删除的项目ID和DOM元素
+        let searchTimeout = null; // 搜索防抖计时器
+        let selectedServiceType = null; // 当前选中的业务类型
+        let originalItemData = null; // 保存原始项目数据用于取消编辑
+        let badgeCount = 0; // 跟踪浮动徽章数量，防止过多
+        const maxBadges = 10; // 最大同时显示的徽章数量
+
+        // DOM 加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从本地存储加载数据
+            loadData();
+            
+            // 绑定事件处理程序
+            bindEvents();
+            
+            // 更新界面
+            updatePendingList();
+            updateCustomContentList();
+            updatePendingCount();
+            updateDeleteButtonsVisibility();
+            
+            // 初始化波纹效果事件
+            initRippleEffects();
+            
+            // 初始化背景文字随机动画
+            initBackgroundTextAnimation();
+            
+            // 初始化鼠标跟随效果
+            initMouseFollowEffect();
+        });
+
+        // 初始化鼠标跟随效果
+        function initMouseFollowEffect() {
+            document.addEventListener('mousemove', function(e) {
+                // 限制同时显示的徽章数量
+                if (badgeCount >= maxBadges) return;
+                
+                // 随机概率生成徽章，控制出现频率
+                if (Math.random() > 0.85) {
+                    createFloatingBadge(e.clientX, e.clientY);
+                }
+            });
+        }
+        
+        // 创建浮动的"爆单"徽章
+        function createFloatingBadge(x, y) {
+            badgeCount++;
+            
+            const badge = document.createElement('div');
+            badge.className = 'floating-badge';
+            
+            // 随机样式
+            const size = 16 + Math.random() * 14; // 16-30px
+            const colors = ['text-red-500', 'text-orange-500', 'text-yellow-500', 'text-green-500'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            badge.innerHTML = `<span class="font-bold ${randomColor} text-[${size}px]">爆单</span>`;
+            
+            // 设置位置，稍微偏移鼠标位置
+            badge.style.left = `${x + (Math.random() * 40 - 20)}px`;
+            badge.style.top = `${y + (Math.random() * 40 - 20)}px`;
+            
+            document.body.appendChild(badge);
+            
+            // 动画结束后移除元素
+            setTimeout(() => {
+                badge.remove();
+                badgeCount--;
+            }, 1500);
+        }
+
+        // 初始化背景文字随机动画
+        function initBackgroundTextAnimation() {
+            // 为每个文字元素生成随机动画参数
+            function setRandomAnimationParams(element) {
+                // 生成随机的位移和旋转值
+                const x1 = Math.random() * 20 - 10; // -10 到 10 之间的随机值
+                const y1 = Math.random() * 20 - 10;
+                const r1 = Math.random() * 1 - 0.5; // -0.5 到 0.5 度之间的随机值
+                
+                const x2 = Math.random() * 20 - 10;
+                const y2 = Math.random() * 20 - 10;
+                const r2 = Math.random() * 1 - 0.5;
+                
+                const x3 = Math.random() * 20 - 10;
+                const y3 = Math.random() * 20 - 10;
+                const r3 = Math.random() * 1 - 0.5;
+                
+                // 设置CSS变量
+                element.style.setProperty('--x1', `${x1}px`);
+                element.style.setProperty('--y1', `${y1}px`);
+                element.style.setProperty('--r1', `${r1}deg`);
+                
+                element.style.setProperty('--x2', `${x2}px`);
+                element.style.setProperty('--y2', `${y2}px`);
+                element.style.setProperty('--r2', `${r2}deg`);
+                
+                element.style.setProperty('--x3', `${x3}px`);
+                element.style.setProperty('--y3', `${y3}px`);
+                element.style.setProperty('--r3', `${r3}deg`);
+                
+                // 设置随机动画延迟和持续时间
+                const delay = Math.random() * 1; // 0 到 1 秒之间的随机延迟
+                const duration = 3 + Math.random() * 2; // 3 到 5 秒之间的随机持续时间
+                
+                element.style.animationDelay = `${delay}s`;
+                element.style.animationDuration = `${duration}s`;
+            }
+            
+            // 应用到两个文字元素
+            const explodeOrders = document.getElementById('explode-orders');
+            const getRich = document.getElementById('get-rich');
+            
+            // 初始设置动画参数
+            setRandomAnimationParams(explodeOrders);
+            setRandomAnimationParams(getRich);
+            
+            // 定期更新动画参数
+            setInterval(() => {
+                setRandomAnimationParams(explodeOrders);
+                setRandomAnimationParams(getRich);
+            }, 5000); // 每5秒更新一次
+            
+            // 增加随机透明度变化
+            function randomOpacityChange(element) {
+                const minOpacity = 0.2;
+                const maxOpacity = 0.4;
+                const newOpacity = minOpacity + Math.random() * (maxOpacity - minOpacity);
+                
+                element.style.transition = 'opacity 1.5s ease-in-out';
+                element.style.opacity = newOpacity;
+                
+                // 随机时间后再次改变透明度
+                setTimeout(() => randomOpacityChange(element), 2000 + Math.random() * 3000);
+            }
+            
+            // 启动透明度变化动画
+            randomOpacityChange(explodeOrders);
+            randomOpacityChange(getRich);
+        }
+
+        // 初始化波纹效果
+        function initRippleEffects() {
+            document.querySelectorAll('.ripple').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (this.classList.contains('ripple-active')) return;
+                    this.classList.add('ripple-active');
+                    
+                    const x = e.clientX - e.target.getBoundingClientRect().left;
+                    const y = e.clientY - e.target.getBoundingClientRect().top;
+                    
+                    const ripple = document.createElement('span');
+                    ripple.style.width = ripple.style.height = Math.max(e.target.offsetWidth, e.target.offsetHeight) + 'px';
+                    ripple.style.left = x - (parseInt(ripple.style.width) / 2) + 'px';
+                    ripple.style.top = y - (parseInt(ripple.style.height) / 2) + 'px';
+                    ripple.classList.add('absolute', 'bg-white', 'rounded-full', 'opacity-30', 'pointer-events-none', 'transform', 'scale-0');
+                    
+                    const rippleContainer = this.querySelector('.ripple-container') || this;
+                    rippleContainer.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.classList.add('transition-transform', 'duration-500', 'ease-out', 'scale-100');
+                        ripple.classList.remove('scale-0');
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                        this.classList.remove('ripple-active');
+                    }, 500);
+                });
+            });
+        }
+
+        // 绑定事件处理程序
+        function bindEvents() {
+            // 粘贴区域自动提取
+            const pasteArea = document.getElementById('paste-area');
+            pasteArea.addEventListener('paste', function() {
+                setTimeout(extractInfo, 50);
+            });
+            
+            // 当粘贴区域内容变化时也尝试提取
+            pasteArea.addEventListener('input', function() {
+                clearTimeout(this.extractTimeout);
+                this.extractTimeout = setTimeout(extractInfo, 300);
+            });
+            
+            // 复制按钮 - 提取结果区域
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const text = document.getElementById(targetId).value;
+                    copyToClipboard(text);
+                });
+            });
+            
+            // 保存按钮
+            document.getElementById('save-btn').addEventListener('click', function() {
+                if (currentEditingItemId) {
+                    updateItemContent();
+                } else {
+                    saveToPending();
+                }
+            });
+            
+            // 清空按钮
+            document.getElementById('clear-btn').addEventListener('click', clearInputFields);
+            
+            // 二次确定按钮
+            document.getElementById('secondary-confirm-btn').addEventListener('click', function() {
+                const modal = document.getElementById('secondary-modal');
+                const modalContent = document.getElementById('modal-content');
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100', 'transition-all', 'duration-300');
+                }, 50);
+            });
+            
+            // 关闭弹窗按钮
+            document.getElementById('close-modal').addEventListener('click', closeSecondaryModal);
+            
+            // 取消编辑按钮
+            document.getElementById('cancel-edit-btn').addEventListener('click', function() {
+                cancelCustomItemEdit();
+            });
+            
+            // 保存编辑按钮
+            document.getElementById('save-edit-btn').addEventListener('click', function() {
+                saveCustomItemEdit();
+            });
+            
+            // 点击弹窗外部关闭
+            document.getElementById('secondary-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeSecondaryModal();
+                }
+            });
+            
+            // 添加自定义内容按钮
+            document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
+            
+            // 按Enter键添加自定义内容
+            document.getElementById('new-item-content').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const resultsContainer = document.getElementById('search-results');
+                    if (!resultsContainer.classList.contains('hidden') && resultsContainer.children.length > 0) {
+                        e.preventDefault();
+                        resultsContainer.children[0].click();
+                        return;
+                    }
+                    addCustomItem();
+                }
+            });
+            
+            // 搜索输入框事件
+            document.getElementById('new-item-content').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.trim();
+                
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (searchTerm.length >= 1) {
+                        performSearch(searchTerm);
+                    } else {
+                        hideSearchResults();
+                        const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
+                        filterCustomContent(activeCategory);
+                    }
+                }, 200);
+            });
+            
+            // 点击页面其他地方隐藏搜索结果
+            document.addEventListener('click', function(e) {
+                const searchInput = document.getElementById('new-item-content');
+                const resultsContainer = document.getElementById('search-results');
+                
+                if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+                    hideSearchResults();
+                }
+            });
+            
+            // 分类按钮
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    
+                    document.querySelectorAll('.category-btn').forEach(b => {
+                        b.classList.remove('active', 'bg-secondary', 'text-white');
+                        b.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                    });
+                    this.classList.add('active', 'bg-secondary', 'text-white');
+                    this.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                    
+                    if (category !== 'all') {
+                        const categorySelect = document.getElementById('new-item-category');
+                        categorySelect.value = category;
+                        
+                        categorySelect.classList.add('ring-2', 'ring-secondary/50');
+                        setTimeout(() => {
+                            categorySelect.classList.remove('ring-2', 'ring-secondary/50');
+                        }, 300);
+                    }
+                    
+                    filterCustomContent(category);
+                });
+            });
+            
+            // 皮肤切换按钮
+            document.getElementById('skin-toggle').addEventListener('click', toggleSkin);
+            
+            // 使用事件委托处理动态生成的删除按钮和复制按钮
+            document.getElementById('pending-list').addEventListener('click', function(e) {
+                const deleteBtn = e.target.closest('.delete-btn');
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    showDeleteConfirm(deleteBtn);
+                    return;
+                }
+                
+                const copyBtn = e.target.closest('.copy-item-btn');
+                if (copyBtn) {
+                    const itemId = parseInt(copyBtn.getAttribute('data-id'));
+                    const item = pendingItems.find(i => i.id === itemId);
+                    if (item) {
+                        const content = item.content || '无办理内容';
+                        copyToClipboard(content);
+                    }
+                    e.stopPropagation();
+                    return;
+                }
+            });
+            
+            // 为自定义内容列表添加事件委托
+            document.getElementById('custom-content-list').addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.edit-custom-btn');
+                if (editBtn) {
+                    e.stopPropagation();
+                    const id = parseInt(editBtn.getAttribute('data-id'));
+                    startEditCustomItem(id);
+                    return;
+                }
+                
+                const deleteBtn = e.target.closest('.delete-custom-btn');
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    const id = parseInt(deleteBtn.getAttribute('data-id'));
+                    handleCustomItemDelete(id, e.target.closest('div[data-id]'));
+                    return;
+                }
+                
+                const copyable = e.target.closest('.copyable');
+                if (copyable) {
+                    const text = copyable.getAttribute('data-text');
+                    copyToClipboard(text);
+                    
+                    if (currentEditingItemId) {
+                        const textarea = document.getElementById('processing-content');
+                        textarea.value += (textarea.value ? ' ' : '') + text;
+                        textarea.focus();
+                        
+                        textarea.classList.add('ring-2', 'ring-secondary/50');
+                        setTimeout(() => {
+                            textarea.classList.remove('ring-2', 'ring-secondary/50');
+                        }, 500);
+                    }
+                    return;
+                }
+            });
+            
+            // 一键删除已处理项目按钮
+            document.getElementById('delete-processed-btn').addEventListener('click', function() {
+                const processedCount = pendingItems.filter(item => item.status === 'processed').length;
+                if (processedCount === 0) {
+                    showActionToast('没有已处理项目可删除');
+                    return;
+                }
+                
+                showBulkDeleteConfirm(
+                    `确定要删除所有${processedCount}个已处理项目吗？`,
+                    () => {
+                        const processedItems = document.querySelectorAll('#pending-list > div[data-id]');
+                        processedItems.forEach(el => {
+                            const itemId = parseInt(el.getAttribute('data-id'));
+                            const item = pendingItems.find(i => i.id === itemId);
+                            if (item && item.status === 'processed') {
+                                el.classList.add('delete-animation');
+                            }
+                        });
+                        
+                        setTimeout(() => {
+                            if (currentEditingItemId) {
+                                const currentItem = pendingItems.find(i => i.id === currentEditingItemId);
+                                if (currentItem && currentItem.status === 'processed') {
+                                    currentEditingItemId = null;
+                                    clearInputFields();
+                                    document.getElementById('save-btn').innerHTML = '<i class="fa fa-save mr-1"></i> 保存';
+                                }
+                            }
+                            
+                            pendingItems = pendingItems.filter(item => item.status === 'pending');
+                            saveData();
+                            updatePendingList();
+                            updatePendingCount();
+                            updateDeleteButtonsVisibility();
+                            showActionToast(`已删除${processedCount}个已处理项目`);
+                        }, 400);
+                    }
+                );
+            });
+            
+            // 一键删除所有项目按钮
+            document.getElementById('clear-all-btn').addEventListener('click', function() {
+                if (pendingItems.length === 0) return;
+                
+                showBulkDeleteConfirm(
+                    `确定要删除所有${pendingItems.length}个项目吗？此操作不可恢复！`,
+                    () => {
+                        const allItems = document.querySelectorAll('#pending-list > div[data-id]');
+                        allItems.forEach(el => {
+                            el.classList.add('delete-animation');
+                        });
+                        
+                        setTimeout(() => {
+                            currentEditingItemId = null;
+                            originalItemData = null;
+                            clearInputFields();
+                            document.getElementById('save-btn').innerHTML = '<i class="fa fa-save mr-1"></i> 保存';
+                            
+                            pendingItems = [];
+                            saveData();
+                            updatePendingList();
+                            updatePendingCount();
+                            updateDeleteButtonsVisibility();
+                            showActionToast('已删除所有项目');
+                        }, 400);
+                    }
+                );
+            });
+            
+            // 删除确认对话框按钮
+            document.getElementById('delete-confirm-btn').addEventListener('click', function() {
+                if (itemToDelete) {
+                    if (itemToDelete.confirmCallback) {
+                        itemToDelete.confirmCallback();
+                    } else {
+                        performItemDelete(itemToDelete.deleteBtn, itemToDelete.itemId);
+                    }
+                    closeDeleteConfirm();
+                }
+            });
+            
+            document.getElementById('delete-cancel-btn').addEventListener('click', closeDeleteConfirm);
+            
+            // 点击删除确认对话框外部关闭
+            document.getElementById('delete-confirm-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeDeleteConfirm();
+                }
+            });
+            
+            // 业务类型按钮点击事件
+            document.querySelectorAll('.service-type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const serviceText = this.getAttribute('data-service');
+                    
+                    // 移除所有按钮的选中状态
+                    document.querySelectorAll('.service-type-btn').forEach(b => {
+                        b.classList.remove('selected');
+                    });
+                    
+                    // 如果点击的是当前选中的按钮，则取消选择
+                    if (selectedServiceType === serviceText) {
+                        selectedServiceType = null;
+                    } else {
+                        // 否则选中当前按钮
+                        selectedServiceType = serviceText;
+                        this.classList.add('selected');
+                    }
+                    
+                    // 聚焦到文本框
+                    document.getElementById('processing-content').focus();
+                });
+            });
+        }
+        
+        // 执行搜索并显示结果
+        function performSearch(searchTerm) {
+            const resultsContainer = document.getElementById('search-results');
+            const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
+            
+            let filteredItems = customItems;
+            if (activeCategory !== 'all') {
+                filteredItems = filteredItems.filter(item => item.category === activeCategory);
+            }
+            
+            const searchResults = filteredItems.filter(item => 
+                item.content.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            if (searchResults.length > 0) {
+                resultsContainer.innerHTML = '';
+                
+                searchResults.forEach(item => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'p-2 hover:bg-gray-100 cursor-pointer transition-colors';
+                    
+                    const highlightedContent = item.content.replace(
+                        new RegExp(searchTerm, 'gi'), 
+                        match => `<span class="search-highlight">${match}</span>`
+                    );
+                    
+                    resultItem.innerHTML = `
+                        <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800 mr-2">
+                            ${item.category}
+                        </span>
+                        <span class="text-sm">${highlightedContent}</span>
+                    `;
+                    
+                    resultItem.addEventListener('click', function() {
+                        copyToClipboard(item.content);
+                        
+                        if (currentEditingItemId) {
+                            const textarea = document.getElementById('processing-content');
+                            textarea.value += (textarea.value ? ' ' : '') + item.content;
+                            textarea.focus();
+                            
+                            textarea.classList.add('ring-2', 'ring-secondary/50');
+                            setTimeout(() => {
+                                textarea.classList.remove('ring-2', 'ring-secondary/50');
+                            }, 500);
+                        }
+                        
+                        hideSearchResults();
+                    });
+                    
+                    resultsContainer.appendChild(resultItem);
+                });
+                
+                resultsContainer.classList.remove('hidden');
+            } else {
+                resultsContainer.innerHTML = '<div class="p-2 text-gray-500 text-sm">没有找到匹配的内容</div>';
+                resultsContainer.classList.remove('hidden');
+            }
+        }
+        
+        // 隐藏搜索结果
+        function hideSearchResults() {
+            const resultsContainer = document.getElementById('search-results');
+            resultsContainer.classList.add('hidden');
+        }
+        
+        // 显示删除确认对话框
+        function showDeleteConfirm(deleteBtn) {
+            const itemId = Number(deleteBtn.getAttribute('data-id'));
+            const item = pendingItems.find(i => i.id === itemId);
+            
+            itemToDelete = {
+                deleteBtn: deleteBtn,
+                itemId: itemId
+            };
+            
+            document.getElementById('delete-confirm-title').textContent = '确认删除';
+            document.getElementById('delete-confirm-message').textContent = '您确定要删除这个项目吗？';
+            
+            const modal = document.getElementById('delete-confirm-modal');
+            const modalContent = document.getElementById('delete-confirm-content');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100', 'transition-all', 'duration-300');
+            }, 50);
+        }
+        
+        // 显示批量删除确认对话框
+        function showBulkDeleteConfirm(message, confirmCallback) {
+            document.getElementById('delete-confirm-title').textContent = '批量删除确认';
+            document.getElementById('delete-confirm-message').textContent = message;
+            
+            itemToDelete = {
+                confirmCallback: confirmCallback
+            };
+            
+            const modal = document.getElementById('delete-confirm-modal');
+            const modalContent = document.getElementById('delete-confirm-content');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100', 'transition-all', 'duration-300');
+            }, 50);
+        }
+        
+        // 关闭删除确认对话框
+        function closeDeleteConfirm() {
+            const modal = document.getElementById('delete-confirm-modal');
+            const modalContent = document.getElementById('delete-confirm-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0', 'transition-all', 'duration-300');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                itemToDelete = null;
+            }, 300);
+        }
+        
+        // 执行项目删除操作
+        function performItemDelete(deleteBtn, itemId) {
+            const itemElement = deleteBtn.closest('[data-id]');
+            
+            itemElement.classList.add('delete-animation');
+            
+            if (currentEditingItemId === itemId) {
+                currentEditingItemId = null;
+                originalItemData = null;
+                clearInputFields();
+                document.getElementById('save-btn').innerHTML = '<i class="fa fa-save mr-1"></i> 保存';
+            }
+            
+            setTimeout(() => {
+                itemElement.remove();
+                
+                pendingItems = pendingItems.filter(item => item.id !== itemId);
+                
+                saveData();
+                updatePendingCount();
+                updateDeleteButtonsVisibility();
+                
+                if (pendingItems.length === 0) {
+                    updatePendingList();
+                }
+                
+                showActionToast('项目已删除');
+            }, 400);
+        }
+        
+        // 处理自定义内容删除
+        function handleCustomItemDelete(itemId, itemElement) {
+            document.getElementById('delete-confirm-title').textContent = '确认删除';
+            document.getElementById('delete-confirm-message').textContent = '您确定要删除这个内容吗？';
+            
+            itemToDelete = {
+                itemId: itemId,
+                itemElement: itemElement,
+                isCustom: true
+            };
+            
+            const modal = document.getElementById('delete-confirm-modal');
+            const modalContent = document.getElementById('delete-confirm-content');
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100', 'transition-all', 'duration-300');
+            }, 50);
+            
+            const originalHandler = document.getElementById('delete-confirm-btn').onclick;
+            document.getElementById('delete-confirm-btn').onclick = function() {
+                if (itemToDelete && itemToDelete.isCustom) {
+                    if (currentEditingCustomItemId === itemToDelete.itemId) {
+                        cancelCustomItemEdit();
+                    }
+                    
+                    itemToDelete.itemElement.classList.add('opacity-0', 'transform', 'translate-x-[-20px]', 'transition-all', 'duration-300');
+                    
+                    setTimeout(() => {
+                        itemToDelete.itemElement.remove();
+                        
+                        customItems = customItems.filter(i => i.id !== itemToDelete.itemId);
+                        saveData();
+                        
+                        const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
+                        filterCustomContent(activeCategory);
+                        
+                        if (customItems.length === 0) {
+                            updateCustomContentList();
+                        }
+                        
+                        showActionToast('内容已删除');
+                    }, 300);
+                    
+                    closeDeleteConfirm();
+                }
+                
+                document.getElementById('delete-confirm-btn').onclick = originalHandler;
+            };
+        }
+        
+        // 关闭二次确定弹窗的函数
+        function closeSecondaryModal() {
+            if (currentEditingCustomItemId !== null) {
+                cancelCustomItemEdit();
+            }
+            
+            hideSearchResults();
+            
+            const modal = document.getElementById('secondary-modal');
+            const modalContent = document.getElementById('modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0', 'transition-all', 'duration-300');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // 提取信息
+        function extractInfo() {
+            const text = document.getElementById('paste-area').value.trim();
+            if (!text) return;
+            
+            // 提取主叫号码
+            const callerMatch = text.match(/主叫号码[:：\s]*(\d+)/);
+            if (callerMatch && callerMatch[1]) {
+                document.getElementById('caller-number').value = callerMatch[1];
+                highlightInput('caller-number');
+            }
+            
+            // 提取业务号码
+            const serviceMatch = text.match(/业务号码[:：\s]*(\d+)/);
+            if (serviceMatch && serviceMatch[1]) {
+                document.getElementById('service-number').value = serviceMatch[1];
+                highlightInput('service-number');
+            }
+            
+            // 提取呼叫流水号
+            const callIdMatch = text.match(/呼叫流水号[:：\s]*(\S+)/);
+            if (callIdMatch && callIdMatch[1]) {
+                document.getElementById('call-id').value = callIdMatch[1];
+                highlightInput('call-id');
+            }
+        }
+        
+        // 为输入框添加高亮动画
+        function highlightInput(elementId) {
+            const element = document.getElementById(elementId);
+            element.classList.add('ring-2', 'ring-green-500');
+            setTimeout(() => {
+                element.classList.remove('ring-2', 'ring-green-500');
+            }, 1000);
+        }
+
+        // 复制到剪贴板并显示提示
+        function copyToClipboard(text) {
+            if (!text) return;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(showCopyToast).catch(() => {
+                    fallbackCopyText(text);
+                });
+            } else {
+                fallbackCopyText(text);
+            }
+        }
+        
+        // 传统复制方法，作为兼容性回退
+        function fallbackCopyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopyToast();
+                }
+            } catch (err) {
+                console.error('复制失败:', err);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+        
+        // 显示复制成功提示
+        function showCopyToast() {
+            const toast = document.getElementById('copy-toast');
+            toast.classList.add('copy-toast');
+            setTimeout(() => {
+                toast.classList.remove('copy-toast');
+            }, 2000);
+        }
+        
+        // 显示操作提示
+        function showActionToast(message) {
+            const toast = document.getElementById('action-toast');
+            toast.textContent = message;
+            toast.classList.add('copy-toast');
+            setTimeout(() => {
+                toast.classList.remove('copy-toast');
+            }, 2000);
+        }
+
+        // 保存到待处理列表
+        function saveToPending() {
+            const caller = document.getElementById('caller-number').value.trim();
+            const service = document.getElementById('service-number').value.trim();
+            const callId = document.getElementById('call-id').value.trim();
+            const content = document.getElementById('processing-content').value.trim();
+            
+            // 验证必填项
+            if (!callId) {
+                alert('请先粘贴内容以提取呼叫流水号');
+                return;
+            }
+            
+            if (!selectedServiceType) {
+                alert('请选择业务类型');
+                return;
+            }
+            
+            if (!content) {
+                alert('请输入办理内容');
+                return;
+            }
+            
+            // 创建新的待处理项目，包含业务类型
+            const newItem = {
+                id: Date.now(),
+                caller: caller,
+                service: service,
+                callId: callId,
+                content: content,
+                serviceType: selectedServiceType,
+                status: 'pending' // pending 或 processed
+            };
+            
+            pendingItems.unshift(newItem);
+            saveData();
+            updatePendingList();
+            updatePendingCount();
+            updateDeleteButtonsVisibility();
+            
+            showSaveSuccess();
+            
+            // 重置表单
+            clearInputFields();
+            selectedServiceType = null;
+            document.querySelectorAll('.service-type-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+        }
+        
+        // 显示保存成功的动画效果
+        function showSaveSuccess() {
+            const saveBtn = document.getElementById('save-btn');
+            const originalText = saveBtn.innerHTML;
+            
+            saveBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 保存成功';
+            saveBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+            saveBtn.classList.add('bg-green-600');
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.classList.remove('bg-green-600');
+                saveBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            }, 1500);
+        }
+
+        // 更新项目内容
+        function updateItemContent() {
+            if (!currentEditingItemId) return;
+            
+            const content = document.getElementById('processing-content').value.trim();
+            const itemIndex = pendingItems.findIndex(i => i.id === currentEditingItemId);
+            
+            if (itemIndex !== -1) {
+                // 如果用户修改了业务类型，则更新
+                if (selectedServiceType) {
+                    pendingItems[itemIndex].serviceType = selectedServiceType;
+                }
+                
+                pendingItems[itemIndex].content = content;
+                saveData();
+                updatePendingList();
+                
+                // 重置表单
+                clearInputFields();
+                currentEditingItemId = null;
+                originalItemData = null;
+                selectedServiceType = null;
+                document.querySelectorAll('.service-type-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                document.getElementById('save-btn').innerHTML = '<i class="fa fa-save mr-1"></i> 保存';
+                
+                const saveBtn = document.getElementById('save-btn');
+                const originalText = saveBtn.innerHTML;
+                
+                saveBtn.innerHTML = '<i class="fa fa-check mr-1"></i> 更新成功';
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                }, 1500);
+            }
+        }
+
+        // 清空输入字段
+        function clearInputFields() {
+            // 如果正在编辑项目，恢复原始数据
+            if (currentEditingItemId && originalItemData) {
+                document.getElementById('processing-content').value = originalItemData.content;
+                selectedServiceType = originalItemData.serviceType;
+                
+                // 恢复业务类型选择状态
+                document.querySelectorAll('.service-type-btn').forEach(btn => {
+                    if (btn.getAttribute('data-service') === originalItemData.serviceType) {
+                        btn.classList.add('selected');
+                    } else {
+                        btn.classList.remove('selected');
+                    }
+                });
+                
+                showActionToast('已取消编辑');
+                return;
+            }
+            
+            // 否则清空所有输入
+            document.getElementById('processing-content').value = '';
+            document.getElementById('paste-area').value = '';
+            document.getElementById('caller-number').value = '';
+            document.getElementById('service-number').value = '';
+            document.getElementById('call-id').value = '';
+            
+            // 取消业务类型选择
+            selectedServiceType = null;
+            document.querySelectorAll('.service-type-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // 显示清空提示
+            showActionToast('已清空输入内容');
+        }
+
+        // 更新待处理列表
+        function updatePendingList() {
+            const listElement = document.getElementById('pending-list');
+            
+            if (pendingItems.length === 0) {
+                listElement.innerHTML = `
+                    <div class="text-gray-500 text-center py-6">
+                        <i class="fa fa-inbox text-2xl mb-2 text-gray-400"></i>
+                        <p>暂无待处理项目</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listElement.innerHTML = '';
+            
+            pendingItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                const isHighlighted = currentEditingItemId === item.id;
+                
+                itemElement.setAttribute('data-id', item.id);
+                
+                itemElement.className = `p-2 rounded-lg border click-effect cursor-pointer transition-all duration-300 ${
+                    item.status === 'pending' 
+                        ? 'border-yellow-300 bg-yellow-50 hover:bg-yellow-100' 
+                        : 'border-green-300 bg-green-50 hover:bg-green-100'
+                } ${isHighlighted ? 'highlighted-item' : ''}`;
+                
+                // 根据业务类型选择不同的标签颜色
+                let serviceTypeClass = '';
+                switch(item.serviceType) {
+                    case '新装宽带':
+                        serviceTypeClass = 'bg-blue-100 text-blue-800';
+                        break;
+                    case '改套餐':
+                        serviceTypeClass = 'bg-purple-100 text-purple-800';
+                        break;
+                    case '增值业务':
+                        serviceTypeClass = 'bg-green-100 text-green-800';
+                        break;
+                    case '10000单':
+                        serviceTypeClass = 'bg-yellow-100 text-yellow-800';
+                        break;
+                    default:
+                        serviceTypeClass = 'bg-gray-100 text-gray-800';
+                }
+                
+                itemElement.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="status-text cursor-pointer text-xs font-medium ${item.status === 'pending' ? 'text-yellow-700' : 'text-green-700'}" data-id="${item.id}">
+                            ${item.status === 'pending' ? '待处理' : '已处理'}
+                        </span>
+                        <span class="inline-block px-2 py-0.5 text-xs rounded-full ${serviceTypeClass}">
+                            ${item.serviceType || '未知类型'}
+                        </span>
+                    </div>
+                    <p class="content-text text-sm text-gray-700 mb-1 truncate" data-id="${item.id}">
+                        ${item.content || '无办理内容'}
+                    </p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-600">
+                            ${item.caller || '无主叫号码'}
+                        </span>
+                        <div class="flex gap-1">
+                            <button class="copy-item-btn bg-secondary/80 hover:bg-secondary text-white p-1 px-2 rounded text-xs click-effect transition-colors ripple push-effect" data-id="${item.id}" title="复制内容">
+                                复制
+                            </button>
+                            <button class="delete-btn text-red-500 hover:bg-red-100 p-1 px-2 rounded text-xs click-effect transition-colors focus:outline-none focus:ring-1 focus:ring-red-500 ripple push-effect" data-id="${item.id}" title="删除">
+                                删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                itemElement.addEventListener('click', function(e) {
+                    if (e.target.closest('button')) return;
+                    loadItemToEdit(item);
+                });
+                
+                itemElement.querySelector('.status-text').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    item.status = item.status === 'pending' ? 'processed' : 'pending';
+                    saveData();
+                    updatePendingList();
+                    updatePendingCount();
+                    updateDeleteButtonsVisibility();
+                });
+                
+                listElement.appendChild(itemElement);
+            });
+        }
+
+        // 加载项目到右侧编辑区
+        function loadItemToEdit(item) {
+            // 移除之前的编辑状态
+            if (currentEditingItemId) {
+                const prevItem = document.querySelector(`#pending-list > div[data-id="${currentEditingItemId}"]`);
+                if (prevItem) prevItem.classList.remove('highlighted-item');
+            }
+            
+            currentEditingItemId = item.id;
+            // 保存原始项目数据用于取消编辑
+            originalItemData = {
+                content: item.content,
+                serviceType: item.serviceType
+            };
+            selectedServiceType = item.serviceType;
+            
+            // 选中对应的业务类型按钮
+            document.querySelectorAll('.service-type-btn').forEach(btn => {
+                if (btn.getAttribute('data-service') === item.serviceType) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+            
+            document.getElementById('caller-number').value = item.caller || '';
+            document.getElementById('service-number').value = item.service || '';
+            document.getElementById('call-id').value = item.callId || '';
+            document.getElementById('processing-content').value = item.content || '';
+            
+            document.getElementById('save-btn').innerHTML = '<i class="fa fa-refresh mr-1"></i> 更新';
+            
+            // 滚动到内容面板
+            document.getElementById('content-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // 聚焦并高亮编辑区域
+            const textarea = document.getElementById('processing-content');
+            textarea.focus();
+            textarea.classList.add('editing-breathing-bg');
+            
+            // 3秒后移除呼吸效果
+            setTimeout(() => {
+                textarea.classList.remove('editing-breathing-bg');
+            }, 3000);
+            
+            // 更新列表以显示高亮状态
+            updatePendingList();
+            
+            // 显示编辑提示
+            showActionToast('正在编辑项目，完成后点击更新');
+        }
+
+        // 更新待处理数量
+        function updatePendingCount() {
+            const count = pendingItems.filter(item => item.status === 'pending').length;
+            const countElement = document.getElementById('pending-count');
+            
+            if (countElement.textContent != count) {
+                countElement.classList.add('scale-125', 'font-bold');
+                setTimeout(() => {
+                    countElement.classList.remove('scale-125', 'font-bold');
+                }, 300);
+            }
+            
+            countElement.textContent = count;
+        }
+        
+        // 更新删除按钮可见性
+        function updateDeleteButtonsVisibility() {
+            const deleteProcessedBtn = document.getElementById('delete-processed-btn');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            
+            const hasProcessed = pendingItems.some(item => item.status === 'processed');
+            const hasItems = pendingItems.length > 0;
+            
+            if (hasProcessed) {
+                deleteProcessedBtn.classList.remove('hidden');
+                deleteProcessedBtn.classList.add('opacity-100');
+                deleteProcessedBtn.classList.remove('opacity-0');
+            } else {
+                deleteProcessedBtn.classList.add('opacity-0');
+                deleteProcessedBtn.classList.remove('opacity-100');
+                setTimeout(() => {
+                    if (!hasProcessed) {
+                        deleteProcessedBtn.classList.add('hidden');
+                    }
+                }, 300);
+            }
+            
+            if (hasItems) {
+                clearAllBtn.classList.remove('hidden');
+                clearAllBtn.classList.add('opacity-100');
+                clearAllBtn.classList.remove('opacity-0');
+            } else {
+                clearAllBtn.classList.add('opacity-0');
+                clearAllBtn.classList.remove('opacity-100');
+                setTimeout(() => {
+                    if (!hasItems) {
+                        clearAllBtn.classList.add('hidden');
+                    }
+                }, 300);
+            }
+        }
+
+        // 添加自定义内容
+        function addCustomItem() {
+            const category = document.getElementById('new-item-category').value;
+            const content = document.getElementById('new-item-content').value.trim();
+            
+            if (!content) return;
+            
+            customItems.unshift({
+                id: Date.now(),
+                category: category,
+                content: content
+            });
+            
+            document.getElementById('new-item-content').value = '';
+            
+            hideSearchResults();
+            
+            saveData();
+            updateCustomContentList();
+            
+            const addBtn = document.getElementById('add-item-btn');
+            const originalContent = addBtn.innerHTML;
+            addBtn.innerHTML = '<i class="fa fa-check"></i>';
+            addBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+            addBtn.classList.add('bg-green-600');
+            
+            setTimeout(() => {
+                addBtn.innerHTML = originalContent;
+                addBtn.classList.remove('bg-green-600');
+                addBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            }, 1500);
+            
+            const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
+            filterCustomContent(activeCategory);
+        }
+
+        // 开始编辑自定义内容
+        function startEditCustomItem(itemId) {
+            const item = customItems.find(i => i.id === itemId);
+            if (!item) return;
+            
+            currentEditingCustomItemId = itemId;
+            
+            // 隐藏添加区域，显示编辑区域
+            document.getElementById('add-item-section').classList.add('hidden');
+            document.getElementById('edit-item-section').classList.remove('hidden');
+            document.getElementById('normal-mode-controls').classList.add('hidden');
+            document.getElementById('edit-mode-controls').classList.remove('hidden');
+            
+            // 填充编辑表单
+            document.getElementById('edit-item-category').value = item.category;
+            document.getElementById('edit-item-content').value = item.content;
+            
+            hideSearchResults();
+            
+            // 高亮当前编辑项
+            const items = document.querySelectorAll('#custom-content-list > div');
+            items.forEach(el => {
+                if (parseInt(el.getAttribute('data-id')) === itemId) {
+                    el.classList.add('edit-mode');
+                } else {
+                    el.classList.add('opacity-50');
+                }
+            });
+            
+            document.getElementById('edit-item-content').focus();
+        }
+
+        // 保存自定义内容编辑
+        function saveCustomItemEdit() {
+            if (currentEditingCustomItemId === null) return;
+            
+            const category = document.getElementById('edit-item-category').value;
+            const content = document.getElementById('edit-item-content').value.trim();
+            
+            if (!content) return;
+            
+            const itemIndex = customItems.findIndex(i => i.id === currentEditingCustomItemId);
+            if (itemIndex !== -1) {
+                customItems[itemIndex].category = category;
+                customItems[itemIndex].content = content;
+                
+                saveData();
+                
+                const activeCategory = document.querySelector('.category-btn.active').getAttribute('data-category');
+                filterCustomContent(activeCategory);
+                
+                cancelCustomItemEdit();
+                
+                showActionToast('内容已更新');
+            }
+        }
+
+        // 取消自定义内容编辑
+        function cancelCustomItemEdit() {
+            // 重置表单
+            document.getElementById('edit-item-content').value = '';
+            
+            // 显示添加区域，隐藏编辑区域
+            document.getElementById('add-item-section').classList.remove('hidden');
+            document.getElementById('edit-item-section').classList.add('hidden');
+            document.getElementById('normal-mode-controls').classList.remove('hidden');
+            document.getElementById('edit-mode-controls').classList.add('hidden');
+            
+            // 移除所有编辑状态样式
+            document.querySelectorAll('#custom-content-list > div').forEach(el => {
+                el.classList.remove('edit-mode', 'opacity-50');
+            });
+            
+            currentEditingCustomItemId = null;
+            
+            hideSearchResults();
+        }
+
+        // 更新自定义内容列表
+        function updateCustomContentList() {
+            const listElement = document.getElementById('custom-content-list');
+            
+            if (customItems.length === 0) {
+                listElement.innerHTML = `
+                    <div class="text-gray-500 text-center py-6">
+                        <p>暂无内容，请添加自定义内容</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filterCustomContent('all');
+        }
+
+        // 筛选自定义内容
+        function filterCustomContent(category) {
+            const listElement = document.getElementById('custom-content-list');
+            let filteredItems = customItems;
+            
+            if (category !== 'all') {
+                filteredItems = customItems.filter(item => item.category === category);
+            }
+            
+            if (filteredItems.length === 0) {
+                listElement.innerHTML = `
+                    <div class="text-gray-500 text-center py-6">
+                        <p>该分类下暂无内容</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listElement.innerHTML = '';
+            
+            filteredItems.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'flex items-center justify-between p-2 border-b last:border-0 hover:bg-gray-50 rounded transition-all duration-300 transform hover:translate-x-1 group';
+                itemElement.setAttribute('data-id', item.id);
+                
+                itemElement.innerHTML = `
+                    <div class="flex-1 copyable" data-text="${item.content}">
+                        <span class="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800 mr-2">
+                            ${item.category}
+                        </span>
+                        <span class="text-sm">${item.content}</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="edit-custom-btn text-blue-500 hover:bg-blue-100 p-1 px-2 rounded text-xs click-effect transition-colors opacity-0 group-hover:opacity-100 ripple push-effect" data-id="${item.id}" title="编辑">
+                            编辑
+                        </button>
+                        <button class="delete-custom-btn text-red-500 hover:bg-red-100 p-1 px-2 rounded text-xs click-effect transition-colors opacity-0 group-hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-red-500 ripple push-effect" data-id="${item.id}" title="删除">
+                            删除
+                        </button>
+                    </div>
+                `;
+                
+                listElement.appendChild(itemElement);
+            });
+        }
+
+        // 切换皮肤
+        function toggleSkin() {
+            const body = document.getElementById('app-body');
+            const panels = [
+                document.getElementById('left-panel'),
+                document.getElementById('paste-panel'),
+                document.getElementById('content-panel'),
+                document.getElementById('modal-content')
+            ];
+            
+            if (currentSkin === 'default') {
+                currentSkin = 'green';
+                body.classList.remove('bg-neutral');
+                body.classList.add('bg-护眼绿');
+                
+                panels.forEach(panel => {
+                    panel.classList.remove('bg-white');
+                    panel.classList.add('bg-green-transparent-80');
+                });
+                
+                document.getElementById('skin-text').textContent = '默认皮肤';
+            } else {
+                currentSkin = 'default';
+                body.classList.remove('bg-护眼绿');
+                body.classList.add('bg-neutral');
+                
+                panels.forEach(panel => {
+                    panel.classList.remove('bg-green-transparent-80');
+                    panel.classList.add('bg-white');
+                });
+                
+                document.getElementById('skin-text').textContent = '护眼模式';
+            }
+            
+            localStorage.setItem('ticketSystemSkin', currentSkin);
+        }
+
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('ticketSystemPendingItems', JSON.stringify(pendingItems));
+            localStorage.setItem('ticketSystemCustomItems', JSON.stringify(customItems));
+        }
+
+        // 从本地存储加载数据
+        function loadData() {
+            const savedPending = localStorage.getItem('ticketSystemPendingItems');
+            const savedCustom = localStorage.getItem('ticketSystemCustomItems');
+            const savedSkin = localStorage.getItem('ticketSystemSkin');
+            
+            if (savedPending) {
+                try {
+                    pendingItems = JSON.parse(savedPending);
+                } catch (e) {
+                    console.error('加载待处理项目失败:', e);
+                    pendingItems = [];
+                }
+            }
+            
+            if (savedCustom) {
+                try {
+                    customItems = JSON.parse(savedCustom);
+                } catch (e) {
+                    console.error('加载自定义内容失败:', e);
+                    customItems = [];
+                }
+            }
+            
+            if (savedSkin) {
+                currentSkin = savedSkin;
+                toggleSkin();
+                toggleSkin();
+            }
+        }
+    </script>
+</body>
+</html>
